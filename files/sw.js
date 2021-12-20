@@ -1,5 +1,5 @@
 function pathReplace(pathname, replaceValue) {
-  return pathname.replace(/\/\w+\.html$/, `/${replaceValue}`);
+  return pathname.replace(/\/\w+(\.html)?$/, `/${replaceValue}`);
 }
 
 async function getSibling(chapterNumber, pathname) {
@@ -101,9 +101,9 @@ function getNav(previous, next, pathname) {
   return appendContent;
 }
 async function modify(text, pathname) {
-  const _chapterNumber = /\/[a-zA-Z]+(\d+)[a-zA-Z]+\.html$/
-    .exec(pathname)
-    ?.slice(-1)[0];
+  const _chapterNumber = /\/[a-zA-Z]+(\d+)[a-zA-Z]+(\.html)?$/.exec(
+    pathname
+  )?.[1];
   if (_chapterNumber) {
     const chapterNumber = parseInt(_chapterNumber, 10);
     const { previous, next } = await getSibling(chapterNumber, pathname);
@@ -121,7 +121,7 @@ self.addEventListener("fetch", (event) => {
   const handler = async () => {
     const resp = await fetch(event.request);
     const pathname = new URL(resp.url).pathname;
-    if (/^\/books\/.+\/\w+\.html$/.test(pathname)) {
+    if (/^\/books\/.+\/\w+(\.html)?$/.test(pathname)) {
       if (resp.ok) {
         const text = await resp.text();
         const newText = await modify(text, pathname);
