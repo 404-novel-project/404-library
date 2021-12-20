@@ -1,0 +1,9 @@
+{
+  "imports": {
+    "nunjucks": "https://cdn.skypack.dev/nunjucks@3.2.3",
+    "deno_dom": "https://deno.land/x/deno_dom/deno-dom-wasm.ts",
+    "fs_mod": "https://deno.land/std@0.118.0/fs/mod.ts",
+    "fs_copy": "https://deno.land/std@0.118.0/fs/copy.ts",
+    "path_mod": "https://deno.land/std@0.118.0/path/mod.ts"
+  }
+}
