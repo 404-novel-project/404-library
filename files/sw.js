@@ -1,9 +1,8 @@
 const version = "v2";
 
 function pathReplace(pathname, replaceValue) {
-  return pathname.replace(/\/\w+(\.html)?$/, `/${replaceValue}`);
+  return pathname.replace(/\/[\w\.]+$/, `/${replaceValue}`);
 }
-
 async function getSibling(chapterNumber, pathname) {
   const path = pathReplace(pathname, "chapters.json");
 
@@ -43,7 +42,7 @@ async function getSibling(chapterNumber, pathname) {
     return a.chapterNumber - b.chapterNumber;
   }
 }
-function getNav(previous, next, pathname) {
+function getAppendContent(previous, next, pathname) {
   let domText = '<div class="nav">';
   if (previous) {
     domText =
@@ -81,6 +80,7 @@ function getNav(previous, next, pathname) {
 <script>
   const main = document.querySelector(".main");
   main.innerHTML = main.innerHTML + \`${domText}\`;
+
   document.addEventListener("keydown", (e) => {
     const key = e.keyCode;
     // enter
@@ -96,6 +96,11 @@ function getNav(previous, next, pathname) {
         document.querySelector(".nav > a.right")?.click()
     }
   });
+
+  // prefetch next page
+  Array.from(
+    document.querySelectorAll(".nav > a.right[href], .nav > a.left[href]")
+  ).forEach((a) => fetch(a.href));  
 </script>
 <style>
   .nav {
@@ -123,13 +128,27 @@ async function modify(text, pathname) {
     const { previous, next } = await getSibling(chapterNumber, pathname);
     text = text.replace(
       "</body>",
-      getNav(previous, next, pathname) + "</body>"
+      getAppendContent(previous, next, pathname) + "</body>"
     );
     return text;
   } else {
     return text;
   }
 }
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(`main-${version}`).then((cache) => {
+      return cache.addAll([
+        "/assets/chevron-left.svg",
+        "/assets/chevron-right.svg",
+        "/assets/chevron-up.svg",
+        "/assets/worker.js",
+        "/favicon.ico",
+      ]);
+    })
+  );
+});
 
 self.addEventListener("fetch", (event) => {
   const handler = async () => {
