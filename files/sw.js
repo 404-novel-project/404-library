@@ -1,8 +1,37 @@
-const version = "v2";
+const version = "v3";
 
 function pathReplace(pathname, replaceValue) {
   return pathname.replace(/\/[\w\.]+$/, `/${replaceValue}`);
 }
+
+async function cleanCache() {
+  const keys = await caches.keys();
+  for (const key of keys) {
+    if (!key.endsWith(`-${version}`)) {
+      console.log(`Delete cache ${key}`);
+      await caches.delete(key);
+    }
+  }
+}
+async function initCache() {
+  const cacheList = [
+    "/assets/chevron-left.svg",
+    "/assets/chevron-right.svg",
+    "/assets/chevron-up.svg",
+    "/assets/worker.js",
+    "/favicon.ico",
+  ];
+  const cache = await caches.open(`main-${version}`);
+  cache.addAll(cacheList);
+}
+async function updateCache() {
+  await cleanCache();
+  return initCache();
+}
+self.addEventListener("activate", (event) => {
+  event.waitUntil(updateCache());
+});
+
 async function getSibling(chapterNumber, pathname) {
   const path = pathReplace(pathname, "chapters.json");
 
@@ -135,54 +164,43 @@ async function modify(text, pathname) {
     return text;
   }
 }
+async function handleRequest(event) {
+  const cache = await caches.open(`main-${version}`);
+  const cacheResponse = await cache.match(event.request);
+  if (cacheResponse) {
+    console.log(`Found cache: ${event.request.url}`);
+    return cacheResponse;
+  }
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(`main-${version}`).then((cache) => {
-      return cache.addAll([
-        "/assets/chevron-left.svg",
-        "/assets/chevron-right.svg",
-        "/assets/chevron-up.svg",
-        "/assets/worker.js",
-        "/favicon.ico",
-      ]);
-    })
-  );
-});
-
-self.addEventListener("fetch", (event) => {
-  const handler = async () => {
-    const cache = await caches.open(`main-${version}`);
-    const cacheResponse = await cache.match(event.request);
-    if (cacheResponse) {
-      console.log(`Found cache: ${event.request.url}`);
-      return cacheResponse;
-    }
-
-    const resp = await fetch(event.request);
-    const pathname = new URL(resp.url).pathname;
-    if (/^\/books\/.+\/\w+(\.html)?$/.test(pathname)) {
-      if (resp.ok) {
-        const text = await resp.text();
-        const newText = await modify(text, pathname);
-        const body = new Blob([newText], {
-          type: "text/html; charset=UTF-8",
-        });
-        const response = new Response(body, {
-          headers: resp.headers,
-          status: resp.status,
-          statusText: resp.statusText,
-        });
-        cache.put(event.request, response.clone());
-        return response.clone();
-      } else {
-        cache.put(event.request, resp.clone());
-        return resp.clone();
-      }
+  const resp = await fetch(event.request);
+  const pathname = new URL(resp.url).pathname;
+  if (/^\/books\/.+\/\w+(\.html)?$/.test(pathname)) {
+    if (resp.ok) {
+      const text = await resp.text();
+      const newText = await modify(text, pathname);
+      const body = new Blob([newText], {
+        type: "text/html; charset=UTF-8",
+      });
+      const response = new Response(body, {
+        headers: resp.headers,
+        status: resp.status,
+        statusText: resp.statusText,
+      });
+      cache.put(event.request, response.clone());
+      return response.clone();
     } else {
-      cache.put(event.request, resp.clone());
+      if (resp.clone().status !== 404) {
+        cache.put(event.request, resp.clone());
+      }
       return resp.clone();
     }
-  };
-  event.respondWith(handler());
+  } else {
+    if (resp.clone().status !== 404) {
+      cache.put(event.request, resp.clone());
+    }
+    return resp.clone();
+  }
+}
+self.addEventListener("fetch", (event) => {
+  event.respondWith(handleRequest(event));
 });
