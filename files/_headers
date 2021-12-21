@@ -1,0 +1,7 @@
+/*
+    X-XSS-Protection: 1; mode=block
+    X-Content-Type-Options: nosniff
+    X-Frame-Options: DENY
+    Referrer-Policy: same-origin
+    Permissions-Policy: interest-cohort=()
+    Content-Security-Policy: default-src 'none'; img-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; worker-src 'self'
