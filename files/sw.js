@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 /// <reference lib="webworker.importscripts" />
 
-const version = "v4";
+const version = "v6";
 
 function pathReplace(pathname, replaceValue) {
   return pathname.replace(/\/[\w\.]+$/, `/${replaceValue}`);
@@ -153,11 +153,10 @@ function getAppendContent(previous, next, pathname) {
   return appendContent;
 }
 async function modify(text, pathname) {
-  const _chapterNumber = /\/([a-zA-Z]+)?(\d+)([a-zA-Z\.]+)?$/.exec(
+  const chapterNumber = /\/([a-zA-Z]+)?(\d+)([a-zA-Z\.]+)?$/.exec(
     pathname,
   )?.map((m) => parseInt(m, 10)).filter((p) => !isNaN(p))[0];
-  if (_chapterNumber !== undefined) {
-    const chapterNumber = parseInt(_chapterNumber, 10);
+  if (chapterNumber !== undefined) {
     const { previous, next } = await getSibling(chapterNumber, pathname);
     text = text.replace(
       "</body>",

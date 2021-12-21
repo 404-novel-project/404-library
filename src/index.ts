@@ -14,13 +14,18 @@ interface BookMeta {
 function converHref(href: string) {
   const pinyinArray =
     (pinyin(href, { toneType: "none", type: "array" }) as string[]);
-  return pinyinArray
+  const newHref = pinyinArray
     .join("-")
-    .replace(/\-?\[\-?/, "[")
-    .replace(/\-?\]\-?/, "]")
-    .replace(/\-?\//, "/");
+    .replace(/(\-+)?\[(\-+)?/, "[")
+    .replace(/(\-+)?\](\-+)?/, "]")
+    .replace(/(\-+)?\/$/, "/")
+    .replace("ü", "v");
+  if (/^[\w\/\.\-]+$/.test(newHref)) {
+    return newHref;
+  } else {
+    throw new Error("href convert failed!");
+  }
 }
-
 async function getBookMeta(path: string): Promise<null | BookMeta> {
   const _items = Deno.readDirSync(path);
   const items = [..._items];
