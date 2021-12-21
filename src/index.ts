@@ -1,5 +1,5 @@
 import { copyFolderSub, readHtmlFile } from "./lib.ts";
-import { index } from "./template.ts";
+import { Environment, Template } from "nunjucks";
 import { pinyin } from "pinyinPro";
 import { emptyDirSync } from "fs_mod";
 import { copy } from "fs_copy";
@@ -20,9 +20,10 @@ function converHref(href: string) {
     .replace(/(\-+)?\](\-+)?/, "]")
     .replace(/(\-+)?\/$/, "/")
     .replace("ü", "v");
-  if (/^[\w\/\.\-]+$/.test(newHref)) {
+  if (/^[\w\/\.\-\[\]]+$/.test(newHref)) {
     return newHref;
   } else {
+    console.error(href, newHref);
     throw new Error("href convert failed!");
   }
 }
@@ -38,27 +39,22 @@ async function getBookMeta(path: string): Promise<null | BookMeta> {
       return null;
     }
   }
-  try {
-    await readHtmlFile(join(path, "index.html"));
-    const _chapters = await Deno.readTextFile(join(path, "chapters.json"));
-    JSON.parse(_chapters);
-    const _book = await Deno.readTextFile(join(path, "book.json"));
-    const book = JSON.parse(_book);
-    let href = path.replace(Deno.cwd(), "");
-    if (!href.endsWith("/")) {
-      href = href + "/";
-    }
-    const destHref = converHref(href);
-    return {
-      bookname: book.bookname,
-      author: book.author,
-      href,
-      destHref,
-    };
-  } catch (error) {
-    console.error(error);
-    return null;
+  await readHtmlFile(join(path, "index.html"));
+  const _chapters = await Deno.readTextFile(join(path, "chapters.json"));
+  JSON.parse(_chapters);
+  const _book = await Deno.readTextFile(join(path, "book.json"));
+  const book = JSON.parse(_book);
+  let href = path.replace(Deno.cwd(), "");
+  if (!href.endsWith("/")) {
+    href = href + "/";
   }
+  const destHref = converHref(href);
+  return {
+    bookname: book.bookname,
+    author: book.author,
+    href,
+    destHref,
+  };
 }
 async function getBookMetas(): Promise<BookMeta[]> {
   const BooksDir = join(Deno.cwd(), "books");
@@ -81,7 +77,13 @@ async function getBookMetas(): Promise<BookMeta[]> {
     });
   return bookMetas;
 }
-function getIndexPage(books: BookMeta[]) {
+async function getIndexPage(books: BookMeta[]) {
+  const env = new Environment(undefined, { autoescape: true });
+  const indexHtmlJ2 = await Deno.readTextFile(
+    join(Deno.cwd(), "src", "index.html.j2"),
+  );
+  const index = new Template(indexHtmlJ2, env, undefined, true);
+
   const indexHtml = index.render({ books });
   return indexHtml;
 }
@@ -108,24 +110,32 @@ async function copyBooks(href: string, destHref: string) {
 async function createIndexPageAndCopyBooks() {
   const books = await getBookMetas();
 
-  for (const book of books) {
-    copyBooks(book.href, book.destHref);
-  }
+  const tasks = books.map((book) => copyBooks(book.href, book.destHref));
+  await Promise.all(tasks);
 
   const indexHtml = await getIndexPage(books);
   const indexPath = join(DistDir, "index.html");
   await Deno.writeTextFile(indexPath, indexHtml);
 }
-function copyFiles() {
-  copy(join(Deno.cwd(), "assets"), join(DistDir, "assets"));
-  copyFolderSub(join(Deno.cwd(), "files"), DistDir);
+async function copyFiles() {
+  await copy(join(Deno.cwd(), "assets"), join(DistDir, "assets"));
+  await copyFolderSub(join(Deno.cwd(), "files"), DistDir);
 }
-function main() {
+async function main() {
   createDistDir();
-  createIndexPageAndCopyBooks();
-  copyFiles();
+  await createIndexPageAndCopyBooks();
+  await copyFiles();
 }
 
 if (import.meta.main) {
-  main();
+  console.log("Start……");
+  main()
+    .then(() => {
+      console.log("finished!");
+      Deno.exit(0);
+    })
+    .catch((error) => {
+      console.error(error);
+      Deno.exit(1);
+    });
 }

@@ -7,12 +7,12 @@ export async function readHtmlFile(path: string) {
   return new DOMParser().parseFromString(text, "text/html");
 }
 
-export function copyFolderSub(src: string, dest: string) {
-  const _items = Deno.readDirSync(src);
-  const items = [..._items];
-  for (const item of items) {
-    copy(join(src, item.name), join(dest, item.name));
-  }
+export async function copyFolderSub(src: string, dest: string) {
+  const items = [...Deno.readDirSync(src)];
+  const tasks = items.map((item) =>
+    copy(join(src, item.name), join(dest, item.name))
+  );
+  await Promise.all(tasks);
 }
 
 // https://segmentfault.com/a/1190000018428170
