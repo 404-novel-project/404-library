@@ -33,7 +33,10 @@ async function getBookMeta(path: string): Promise<null | BookMeta> {
     JSON.parse(_chapters);
     const _book = await readFile(join(path, "book.json"));
     const book = JSON.parse(_book);
-    const href = path.replace(Deno.cwd(), "");
+    let href = path.replace(Deno.cwd(), "");
+    if (!href.endsWith("/")) {
+      href = href + "/";
+    }
     return {
       bookname: book.bookname,
       author: book.author,
@@ -89,17 +92,19 @@ async function createIndexPageAndCopyBooks() {
   }
 
   const indexHtml = await getIndexPage(books);
-  const indexPath = `${DistDir}/index.html`;
+  const indexPath = join(DistDir, "index.html");
   await createFile(indexPath, indexHtml);
 }
 function copyFiles() {
   copy(join(Deno.cwd(), "assets"), join(DistDir, "assets"));
   copyFolderSub(join(Deno.cwd(), "files"), DistDir);
 }
-function main() {
+export function main() {
   createDistDir();
   createIndexPageAndCopyBooks();
   copyFiles();
 }
 
-main();
+if (import.meta.main) {
+  main();
+}
