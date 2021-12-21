@@ -7,6 +7,7 @@ const ignoreList = [
   "gen",
   "registries",
   "dist",
+  "tmp",
   ".git",
   ".gitignore",
   ".vscode",

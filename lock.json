@@ -1,6 +1,8 @@
 {
   "https://cdn.skypack.dev/-/nunjucks@v3.2.3-w9fFMSyMDpj0nhsR0ICW/dist=es2019,mode=imports/optimized/nunjucks.js": "29a122b33ed135f55d78b426a8157a4c0376297145d8468d8c0958a9792ce649",
+  "https://cdn.skypack.dev/-/pinyin-pro@v3.4.0-2i22FiXcIuzdcmBW2QtO/dist=es2019,mode=imports/optimized/pinyin-pro.js": "ad4d5386839a11f8a97a334643a4f5c73be701a1f551f0ca3b14952deca98bb1",
   "https://cdn.skypack.dev/nunjucks@3.2.3": "0d934d349bb5bba5950e8aa36bde94356c5dc24d381c5024b4d6ae6260abd6f9",
+  "https://cdn.skypack.dev/pinyin-pro@3.4.0": "9bfb5df5a35dd3fd5c21f19721bd43f93260f40e4daf7bb56b3bfbb7461ab8bb",
   "https://deno.land/std@0.118.0/_util/assert.ts": "2f868145a042a11d5ad0a3c748dcf580add8a0dbc0e876eaa0026303a5488f58",
   "https://deno.land/std@0.118.0/_util/os.ts": "dfb186cc4e968c770ab6cc3288bd65f4871be03b93beecae57d657232ecffcac",
   "https://deno.land/std@0.118.0/fs/_util.ts": "f2ce811350236ea8c28450ed822a5f42a0892316515b1cd61321dec13569c56b",

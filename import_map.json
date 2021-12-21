@@ -1,9 +1,11 @@
 {
   "imports": {
     "nunjucks": "https://cdn.skypack.dev/nunjucks@3.2.3",
+    "pinyinPro": "https://cdn.skypack.dev/pinyin-pro@3.4.0",
     "deno_dom": "https://deno.land/x/deno_dom@v0.1.19-alpha/deno-dom-wasm.ts",
     "fs_mod": "https://deno.land/std@0.118.0/fs/mod.ts",
     "fs_copy": "https://deno.land/std@0.118.0/fs/copy.ts",
-    "path_mod": "https://deno.land/std@0.118.0/path/mod.ts"
+    "path_mod": "https://deno.land/std@0.118.0/path/mod.ts",
+    "flags": "https://deno.land/std@0.118.0/flags/mod.ts"
   }
 }

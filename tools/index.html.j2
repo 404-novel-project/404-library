@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="same-origin" />
+    <meta
+      name="generator"
+      content="https://github.com/yingziwu/novel-downloader"
+    />
+    <meta name="date-creation" content="{{ creationDate }}" />
+    <link href="style.css" type="text/css" rel="stylesheet" />
+    <link href="toc.css" type="text/css" rel="stylesheet" />
+    <title>{{ bookname }}</title>
+  </head>
+  <body>
+    <div class="main">
+      <h1>{{ bookname }}</h1>
+      <h3 class="author">{{ author }}</h3>
+      <div class="info">
+        {% if cover -%}
+        <img class="cover" src="{{ cover.name }}" />
+        {%- endif %} 
+        {% if introduction -%}
+        <div>
+          <h3>简介</h3>
+          <div class="introduction">{{ introduction }}</div>
+        </div>
+        {%- endif %}
+      </div>
+      <div class="bookurl">
+        <a href="{{ bookUrl }}">打开原始网站</a>
+      </div>
+      <hr />
+      {% for sectionObj in sectionsObj -%}
+        <div id="section{{ sectionObj.sectionNumber }}" class="section">
+          {% if sectionObj.sectionName %}
+            <h2 class="section-label">{{ sectionObj.sectionName }}</h2>
+          {% endif %}
+          {% for chapter in sectionObj.chpaters -%}
+          <div class="chapter">
+              <a href="{{ chapter.chapterHtmlFileName }}">{{ chapter.chapterName }}</a>
+          </div>
+          {%- endfor %}
+        </div>
+      {%- endfor %} 
+    </div>
+  </body>
+</html>

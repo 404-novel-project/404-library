@@ -2,3 +2,4 @@ deps/
 gen/
 registries/
 dist/
+tmp/

@@ -1,5 +1,6 @@
 import { copyFolderSub, readHtmlFile } from "./lib.ts";
 import { index } from "./template.ts";
+import { pinyin } from "pinyinPro";
 import { emptyDirSync } from "fs_mod";
 import { copy } from "fs_copy";
 import { join } from "path_mod";
@@ -8,7 +9,18 @@ interface BookMeta {
   bookname: string;
   author: string;
   href: string;
+  destHref: string;
 }
+function converHref(href: string) {
+  const pinyinArray =
+    (pinyin(href, { toneType: "none", type: "array" }) as string[]);
+  return pinyinArray
+    .join("-")
+    .replace(/\-?\[\-?/, "[")
+    .replace(/\-?\]\-?/, "]")
+    .replace(/\-?\//, "/");
+}
+
 async function getBookMeta(path: string): Promise<null | BookMeta> {
   const _items = Deno.readDirSync(path);
   const items = [..._items];
@@ -31,10 +43,12 @@ async function getBookMeta(path: string): Promise<null | BookMeta> {
     if (!href.endsWith("/")) {
       href = href + "/";
     }
+    const destHref = converHref(href);
     return {
       bookname: book.bookname,
       author: book.author,
       href,
+      destHref,
     };
   } catch (error) {
     console.error(error);
@@ -49,9 +63,17 @@ async function getBookMetas(): Promise<BookMeta[]> {
     .filter((item) => item.isDirectory)
     .map((item) => join(BooksDir, item.name))
     .map((path) => getBookMeta(path));
-  const bookMetas = (await Promise.all(_bookMetas)).filter(
-    (meta) => meta !== null,
-  ) as BookMeta[];
+  const bookMetas = ((await Promise.all(_bookMetas))
+    .filter((meta) => meta !== null) as BookMeta[])
+    .sort((a, b) => {
+      if (a.bookname > b.bookname) {
+        return 1;
+      }
+      if (a.bookname < b.bookname) {
+        return -1;
+      }
+      return 0;
+    });
   return bookMetas;
 }
 function getIndexPage(books: BookMeta[]) {
@@ -63,9 +85,9 @@ const DistDir = join(Deno.cwd(), "dist");
 function createDistDir() {
   emptyDirSync(DistDir);
 }
-async function copyBooks(href: string) {
+async function copyBooks(href: string, destHref: string) {
   const srcDir = join(Deno.cwd(), href);
-  const destDir = join(DistDir, href);
+  const destDir = join(DistDir, destHref);
   await copy(srcDir, destDir);
   const indexDom = await readHtmlFile(join(srcDir, "index.html"));
   const script = indexDom?.createElement("script");
@@ -82,7 +104,7 @@ async function createIndexPageAndCopyBooks() {
   const books = await getBookMetas();
 
   for (const book of books) {
-    copyBooks(book.href);
+    copyBooks(book.href, book.destHref);
   }
 
   const indexHtml = await getIndexPage(books);
