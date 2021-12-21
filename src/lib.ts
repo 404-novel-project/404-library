@@ -2,45 +2,9 @@ import { DOMParser } from "deno_dom";
 import { copy } from "fs_copy";
 import { join } from "path_mod";
 
-export function readFileSync(path: string, charset?: string) {
-  if (charset === undefined) {
-    charset = "utf-8";
-  }
-  const data = Deno.readFileSync(path);
-  const decoder = new TextDecoder(charset);
-  const text = decoder.decode(data);
-  return text;
-}
-
-export async function readFile(path: string, charset?: string) {
-  if (charset === undefined) {
-    charset = "utf-8";
-  }
-  const data = await Deno.readFile(path);
-  const decoder = new TextDecoder(charset);
-  const text = decoder.decode(data);
-  return text;
-}
-
-export async function readHtmlFile(path: string, charset?: string) {
-  const text = await readFile(path, charset);
+export async function readHtmlFile(path: string) {
+  const text = await Deno.readTextFile(path);
   return new DOMParser().parseFromString(text, "text/html");
-}
-
-export async function createFile(path: string, text: string) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  const f = await Deno.open(path, { createNew: true, write: true, read: true });
-  await f.write(data);
-  f.close();
-}
-
-export async function writeFile(path: string, text: string) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  const f = await Deno.open(path, { write: true, read: true });
-  await f.write(data);
-  f.close();
 }
 
 export function copyFolderSub(src: string, dest: string) {

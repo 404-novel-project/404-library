@@ -1,10 +1,4 @@
-import {
-  readFile,
-  readHtmlFile,
-  createFile,
-  writeFile,
-  copyFolderSub,
-} from "./lib.ts";
+import { readHtmlFile, copyFolderSub } from "./lib.ts";
 import { index } from "./template.ts";
 import { emptyDirSync } from "fs_mod";
 import { copy } from "fs_copy";
@@ -29,9 +23,9 @@ async function getBookMeta(path: string): Promise<null | BookMeta> {
   }
   try {
     await readHtmlFile(join(path, "index.html"));
-    const _chapters = await readFile(join(path, "chapters.json"));
+    const _chapters = await Deno.readTextFile(join(path, "chapters.json"));
     JSON.parse(_chapters);
-    const _book = await readFile(join(path, "book.json"));
+    const _book = await Deno.readTextFile(join(path, "book.json"));
     const book = JSON.parse(_book);
     let href = path.replace(Deno.cwd(), "");
     if (!href.endsWith("/")) {
@@ -80,7 +74,7 @@ async function copyBooks(href: string) {
     indexDom?.head.appendChild(script);
     const indexHTML = indexDom?.documentElement?.outerHTML;
     if (indexHTML) {
-      writeFile(join(destDir, "index.html"), indexHTML);
+      await Deno.writeTextFile(join(destDir, "index.html"), indexHTML);
     }
   }
 }
@@ -93,7 +87,7 @@ async function createIndexPageAndCopyBooks() {
 
   const indexHtml = await getIndexPage(books);
   const indexPath = join(DistDir, "index.html");
-  await createFile(indexPath, indexHtml);
+  await Deno.writeTextFile(indexPath, indexHtml);
 }
 function copyFiles() {
   copy(join(Deno.cwd(), "assets"), join(DistDir, "assets"));
