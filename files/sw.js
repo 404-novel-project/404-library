@@ -1,12 +1,26 @@
+const version = "v2";
+
 function pathReplace(pathname, replaceValue) {
   return pathname.replace(/\/\w+(\.html)?$/, `/${replaceValue}`);
 }
 
 async function getSibling(chapterNumber, pathname) {
   const path = pathReplace(pathname, "chapters.json");
-  const resp = await fetch(path);
+
+  const request = new Request(path);
+  let response;
+  const cache = await caches.open(`chapters-json-${version}`);
+  const cacheResponse = await cache.match(request);
+  if (cacheResponse) {
+    console.log(`Found cache: ${request.url}`);
+    response = cacheResponse;
+  } else {
+    response = await fetch(request);
+    cache.put(request, response.clone());
+  }
+
   try {
-    const chapters = await resp.json();
+    const chapters = await response.clone().json();
     const previousList = chapters
       .filter((c) => c.chapterNumber < chapterNumber)
       .sort(chapterNumberSort);
@@ -108,8 +122,8 @@ async function modify(text, pathname) {
     const chapterNumber = parseInt(_chapterNumber, 10);
     const { previous, next } = await getSibling(chapterNumber, pathname);
     text = text.replace(
-      "</html>",
-      getNav(previous, next, pathname) + "</html>"
+      "</body>",
+      getNav(previous, next, pathname) + "</body>"
     );
     return text;
   } else {
@@ -119,6 +133,13 @@ async function modify(text, pathname) {
 
 self.addEventListener("fetch", (event) => {
   const handler = async () => {
+    const cache = await caches.open(`main-${version}`);
+    const cacheResponse = await cache.match(event.request);
+    if (cacheResponse) {
+      console.log(`Found cache: ${event.request.url}`);
+      return cacheResponse;
+    }
+
     const resp = await fetch(event.request);
     const pathname = new URL(resp.url).pathname;
     if (/^\/books\/.+\/\w+(\.html)?$/.test(pathname)) {
@@ -133,12 +154,15 @@ self.addEventListener("fetch", (event) => {
           status: resp.status,
           statusText: resp.statusText,
         });
-        return response;
+        cache.put(event.request, response.clone());
+        return response.clone();
       } else {
-        return resp;
+        cache.put(event.request, resp.clone());
+        return resp.clone();
       }
     } else {
-      return resp;
+      cache.put(event.request, resp.clone());
+      return resp.clone();
     }
   };
   event.respondWith(handler());
