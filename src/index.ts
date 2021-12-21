@@ -1,4 +1,4 @@
-import { readHtmlFile, copyFolderSub } from "./lib.ts";
+import { copyFolderSub, readHtmlFile } from "./lib.ts";
 import { index } from "./template.ts";
 import { emptyDirSync } from "fs_mod";
 import { copy } from "fs_copy";
@@ -50,7 +50,7 @@ async function getBookMetas(): Promise<BookMeta[]> {
     .map((item) => join(BooksDir, item.name))
     .map((path) => getBookMeta(path));
   const bookMetas = (await Promise.all(_bookMetas)).filter(
-    (meta) => meta !== null
+    (meta) => meta !== null,
   ) as BookMeta[];
   return bookMetas;
 }
@@ -93,7 +93,7 @@ function copyFiles() {
   copy(join(Deno.cwd(), "assets"), join(DistDir, "assets"));
   copyFolderSub(join(Deno.cwd(), "files"), DistDir);
 }
-export function main() {
+function main() {
   createDistDir();
   createIndexPageAndCopyBooks();
   copyFiles();

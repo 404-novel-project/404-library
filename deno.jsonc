@@ -4,6 +4,11 @@
     "strict": true,
     "target": "ESNext",
     "module": "ESNext",
-    "lib": ["deno.window"]
+    "lib": [
+      "deno.window",
+      "deno.unstable",
+      "webworker",
+      "webworker.importscripts"
+    ]
   }
 }

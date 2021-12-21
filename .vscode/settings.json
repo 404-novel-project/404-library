@@ -3,5 +3,18 @@
   "deno.lint": true,
   "deno.unstable": true,
   "deno.importMap": "./import_map.json",
-  "deno.config": "./deno.jsonc"
+  "deno.config": "./deno.jsonc",
+  "deno.codeLens.implementations": true,
+  "deno.codeLens.references": true,
+  "deno.codeLens.referencesAllFunctions": true,
+  "deno.suggest.autoImports": true,
+  "deno.suggest.completeFunctionCalls": true,
+  "deno.suggest.imports.autoDiscover": true,
+  "deno.internalDebug": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  }
 }

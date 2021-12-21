@@ -8,7 +8,7 @@ globalThis.addEventListener("DOMContentLoaded", () => {
         },
         (error) => {
           console.log("Service worker registration failed:", error);
-        }
+        },
       );
   } else {
     console.log("Service workers are not supported.");

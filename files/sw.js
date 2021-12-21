@@ -1,3 +1,6 @@
+/// <reference lib="webworker" />
+/// <reference lib="webworker.importscripts" />
+
 const version = "v3";
 
 function pathReplace(pathname, replaceValue) {
@@ -26,7 +29,7 @@ async function initCache() {
 }
 async function updateCache() {
   await cleanCache();
-  return initCache();
+  await initCache();
 }
 self.addEventListener("activate", (event) => {
   event.waitUntil(updateCache());
@@ -74,33 +77,34 @@ async function getSibling(chapterNumber, pathname) {
 function getAppendContent(previous, next, pathname) {
   let domText = '<div class="nav">';
   if (previous) {
-    domText =
-      domText +
-      `<a href="${pathReplace(
-        pathname,
-        previous.chapterHtmlFileName
-      )}" class="left"><img src="/assets/chevron-left.svg" /></a>`;
+    domText = domText +
+      `<a href="${
+        pathReplace(
+          pathname,
+          previous.chapterHtmlFileName,
+        )
+      }" class="left"><img src="/assets/chevron-left.svg" /></a>`;
   } else {
-    domText =
-      domText +
+    domText = domText +
       `<a class="disabled left"><img src="/assets/chevron-left.svg" /></a>`;
   }
-  domText =
-    domText +
-    `<a href="${pathReplace(
-      pathname,
-      ""
-    )}" class="up"><img src="/assets/chevron-up.svg"></a>`;
-  if (next) {
-    domText =
-      domText +
-      `<a href="${pathReplace(
+  domText = domText +
+    `<a href="${
+      pathReplace(
         pathname,
-        next.chapterHtmlFileName
-      )}" class="right"><img src="/assets/chevron-right.svg"></a>`;
+        "",
+      )
+    }" class="up"><img src="/assets/chevron-up.svg"></a>`;
+  if (next) {
+    domText = domText +
+      `<a href="${
+        pathReplace(
+          pathname,
+          next.chapterHtmlFileName,
+        )
+      }" class="right"><img src="/assets/chevron-right.svg"></a>`;
   } else {
-    domText =
-      domText +
+    domText = domText +
       `<a class="disabled right"><img src="/assets/chevron-right.svg"></a>`;
   }
   domText = domText + `</div>`;
@@ -150,14 +154,14 @@ function getAppendContent(previous, next, pathname) {
 }
 async function modify(text, pathname) {
   const _chapterNumber = /\/[a-zA-Z]+(\d+)[a-zA-Z]+(\.html)?$/.exec(
-    pathname
+    pathname,
   )?.[1];
   if (_chapterNumber) {
     const chapterNumber = parseInt(_chapterNumber, 10);
     const { previous, next } = await getSibling(chapterNumber, pathname);
     text = text.replace(
       "</body>",
-      getAppendContent(previous, next, pathname) + "</body>"
+      getAppendContent(previous, next, pathname) + "</body>",
     );
     return text;
   } else {

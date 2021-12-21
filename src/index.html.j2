@@ -3,13 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="referrer" content="same-origin" />
+    <meta
+      name="description"
+      content="404小说文库，存档因种种原因被删除的小说。"
+    />
     <link rel="stylesheet" href="/assets/index.css" />
-    <script>
-    if (document.location.pathname !== "/") {
-      document.location.pathname = "/"
-    }
-    </script>
     <script src="/assets/worker.js"></script>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -52,14 +50,14 @@
           如果一个作品彻底消失，尸骨无存，那又谈何作者权益，谈何版权，谈何鼓励创作。
         </p>
       </div>
-      <hr>
+      <hr />
       <h2>索引</h2>
       <div class="toc">
-          {%- for book in books -%}
-          <div class="book">
-            《<a href="{{ book.href }}">{{ book.bookname }}</a>》作者：{{ book.author }}
-          </div>
-          {%- endfor -%}
+        {%- for book in books -%}
+        <div class="book">
+          《<a href="{{ book.href }}">{{ book.bookname }}</a>》作者：{{ book.author }}
+        </div>
+        {%- endfor -%}
       </div>
     </div>
   </body>
