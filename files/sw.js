@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 /// <reference lib="webworker.importscripts" />
 
-const version = "v8";
+const version = "v9";
 let Status;
 (function (Status) {
   Status[Status["pending"] = 0] = "pending";
@@ -209,13 +209,13 @@ async function handleRequest(event) {
       cache.put(event.request, response.clone());
       return response.clone();
     } else {
-      if (resp.clone().status !== 404) {
+      if (resp.clone().status >= 200 && resp.clone().status < 400) {
         cache.put(event.request, resp.clone());
       }
       return resp.clone();
     }
   } else {
-    if (resp.clone().status !== 404) {
+    if (resp.clone().status >= 200 && resp.clone().status < 400) {
       cache.put(event.request, resp.clone());
     }
     return resp.clone();
