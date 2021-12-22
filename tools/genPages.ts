@@ -33,8 +33,11 @@ async function genTocCss(
   try {
     await copy(join(sDir, "style.css"), join(path, "style.css"));
   } catch (error) {
-    await Deno.remove(join(path, "style.css"));
-    await copy(join(sDir, "style.css"), join(path, "style.css"));
+    if (error.toString().includes("already exists")) {
+      await Deno.remove(join(path, "style.css"));
+      await copy(join(sDir, "style.css"), join(path, "style.css"));
+    }
+    throw error;
   }
 }
 

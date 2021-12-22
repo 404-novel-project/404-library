@@ -1,7 +1,16 @@
 /// <reference lib="webworker" />
 /// <reference lib="webworker.importscripts" />
 
-const version = "v7";
+const version = "v8";
+let Status;
+(function (Status) {
+  Status[Status["pending"] = 0] = "pending";
+  Status[Status["downloading"] = 1] = "downloading";
+  Status[Status["failed"] = 2] = "failed";
+  Status[Status["finished"] = 3] = "finished";
+  Status[Status["aborted"] = 4] = "aborted";
+  Status[Status["saved"] = 5] = "saved";
+})(Status || (Status = {}));
 
 function pathReplace(pathname, replaceValue) {
   return pathname.replace(/\/[\w\.\-%]+$/, `/${replaceValue}`);
@@ -50,29 +59,35 @@ async function getSibling(chapterNumber, pathname) {
     cache.put(request, response.clone());
   }
 
-  try {
-    const chapters = await response.clone().json();
-    const previousList = chapters
-      .filter((c) => c.chapterNumber < chapterNumber)
-      .sort(chapterNumberSort);
-    const nextList = chapters
-      .filter((c) => c.chapterNumber > chapterNumber)
-      .sort(chapterNumberSort);
-    return {
-      previous: previousList.slice(-1)[0] ?? null,
-      next: nextList[0] ?? null,
-    };
-  } catch (error) {
-    console.error(error);
-    return {
-      previous: null,
-      next: null,
-    };
-  }
-
-  function chapterNumberSort(a, b) {
+  const chapterNumberSort = (a, b) => {
     return a.chapterNumber - b.chapterNumber;
-  }
+  };
+  const chapterStatusFilter = (c) => {
+    if (c.status !== undefined) {
+      const ignoreList = [
+        Status.pending,
+        Status.downloading,
+        Status.failed,
+        Status.aborted,
+      ];
+      return !ignoreList.includes(c.status);
+    } else {
+      return true;
+    }
+  };
+  const chapters = await response.clone().json();
+  const previousList = chapters
+    .filter(chapterStatusFilter)
+    .filter((c) => c.chapterNumber < chapterNumber)
+    .sort(chapterNumberSort);
+  const nextList = chapters
+    .filter(chapterStatusFilter)
+    .filter((c) => c.chapterNumber > chapterNumber)
+    .sort(chapterNumberSort);
+  return {
+    previous: previousList.slice(-1)[0] ?? null,
+    next: nextList[0] ?? null,
+  };
 }
 function getAppendContent(previous, next, pathname) {
   let domText = '<div class="nav">';
