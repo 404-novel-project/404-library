@@ -1,10 +1,10 @@
 /// <reference lib="webworker" />
 /// <reference lib="webworker.importscripts" />
 
-const version = "v6";
+const version = "v7";
 
 function pathReplace(pathname, replaceValue) {
-  return pathname.replace(/\/[\w\.]+$/, `/${replaceValue}`);
+  return pathname.replace(/\/[\w\.\-%]+$/, `/${replaceValue}`);
 }
 
 async function cleanCache() {
@@ -177,7 +177,9 @@ async function handleRequest(event) {
 
   const resp = await fetch(event.request);
   const pathname = new URL(resp.url).pathname;
-  if (/^\/books\/[\[\]\-\w]+\/(\w+)?(Chapter)([\w\.]+)?$/.test(pathname)) {
+  if (
+    /^\/books\/[\[\](%5B)(%5D)\-\w]+\/(\w+)?(Chapter)([\w\.]+)?$/.test(pathname)
+  ) {
     if (resp.ok) {
       const text = await resp.text();
       const newText = await modify(text, pathname);
