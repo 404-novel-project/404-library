@@ -28,3 +28,7 @@ export function debounce(fn: (...args: any[]) => any, delay: number) {
     }
   };
 }
+
+export function deepcopy<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}

@@ -1,3 +1,5 @@
+Sitemap: https://404.bgme.bid/sitemapindex.xml
+
 User-Agent: *
 Allow: /
 

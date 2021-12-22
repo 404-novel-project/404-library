@@ -1,9 +1,12 @@
-import { copyFolderSub, readHtmlFile } from "./lib.ts";
+import { copyFolderSub, deepcopy, readHtmlFile } from "./lib.ts";
 import { Environment, Template } from "nunjucks";
 import { pinyin } from "pinyinPro";
 import { emptyDirSync } from "fs_mod";
 import { copy } from "fs_copy";
 import { join } from "path_mod";
+
+const DistDir = join(Deno.cwd(), "dist");
+const baseHost = "404.bgme.bid";
 
 interface BookMeta {
   bookname: string;
@@ -77,7 +80,7 @@ async function getBookMetas(): Promise<BookMeta[]> {
     });
   return bookMetas;
 }
-async function getIndexPage(books: BookMeta[]) {
+async function genIndexPage(books: BookMeta[]) {
   const env = new Environment(undefined, { autoescape: true });
   const indexHtmlJ2 = await Deno.readTextFile(
     join(Deno.cwd(), "src", "index.html.j2"),
@@ -85,10 +88,29 @@ async function getIndexPage(books: BookMeta[]) {
   const index = new Template(indexHtmlJ2, env, undefined, true);
 
   const indexHtml = index.render({ books });
-  return indexHtml;
+  const indexPath = join(DistDir, "index.html");
+  await Deno.writeTextFile(indexPath, indexHtml);
 }
 
-const DistDir = join(Deno.cwd(), "dist");
+async function genSitemaps(books: BookMeta[]) {
+  const env = new Environment(undefined, { autoescape: true });
+  const siteMapJ2 = await Deno.readTextFile(
+    join(Deno.cwd(), "src", "sitemaps.xml.j2"),
+  );
+  const siteMap = new Template(siteMapJ2, env, undefined, true);
+
+  const newBooks = books
+    .map((b) => deepcopy(b))
+    .map((b) => {
+      let url = "https://" + join(baseHost, b.destHref);
+      url = url.replaceAll("[", "%5B").replaceAll("]", "%5D");
+      return Object.assign(b, { url });
+    });
+  const siteMapXML = siteMap.render({ books: newBooks });
+  const siteMapPath = join(DistDir, "sitemapindex.xml");
+  await Deno.writeTextFile(siteMapPath, siteMapXML);
+}
+
 function createDistDir() {
   emptyDirSync(DistDir);
 }
@@ -113,9 +135,8 @@ async function createIndexPageAndCopyBooks() {
   const tasks = books.map((book) => copyBooks(book.href, book.destHref));
   await Promise.all(tasks);
 
-  const indexHtml = await getIndexPage(books);
-  const indexPath = join(DistDir, "index.html");
-  await Deno.writeTextFile(indexPath, indexHtml);
+  await genIndexPage(books);
+  await genSitemaps(books);
 }
 async function copyFiles() {
   await copy(join(Deno.cwd(), "assets"), join(DistDir, "assets"));
