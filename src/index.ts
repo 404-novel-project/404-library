@@ -1,4 +1,4 @@
-import { copyFolderSub, deepcopy, readHtmlFile } from "./lib.ts";
+import { copyFolderSub, readHtmlFile } from "./lib.ts";
 import { Environment, Template } from "nunjucks";
 import { pinyin } from "pinyinPro";
 import { emptyDirSync } from "fs_mod";
@@ -13,6 +13,8 @@ interface BookMeta {
   author: string;
   href: string;
   destHref: string;
+  urlIndex: string;
+  urlSitemap: string;
 }
 function converHref(href: string) {
   const pinyinArray =
@@ -57,6 +59,8 @@ async function getBookMeta(path: string): Promise<null | BookMeta> {
     author: book.author,
     href,
     destHref,
+    urlIndex: encodeURI(destHref),
+    urlSitemap: "https://" + join(baseHost, encodeURI(destHref)),
   };
 }
 async function getBookMetas(): Promise<BookMeta[]> {
@@ -99,14 +103,7 @@ async function genSitemaps(books: BookMeta[]) {
   );
   const siteMap = new Template(siteMapJ2, env, undefined, true);
 
-  const newBooks = books
-    .map((b) => deepcopy(b))
-    .map((b) => {
-      let url = "https://" + join(baseHost, b.destHref);
-      url = url.replaceAll("[", "%5B").replaceAll("]", "%5D");
-      return Object.assign(b, { url });
-    });
-  const siteMapXML = siteMap.render({ books: newBooks });
+  const siteMapXML = siteMap.render({ books });
   const siteMapPath = join(DistDir, "sitemapindex.xml");
   await Deno.writeTextFile(siteMapPath, siteMapXML);
 }
