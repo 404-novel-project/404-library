@@ -4,16 +4,16 @@
 const version = "v9";
 let Status;
 (function (Status) {
-  Status[Status["pending"] = 0] = "pending";
-  Status[Status["downloading"] = 1] = "downloading";
-  Status[Status["failed"] = 2] = "failed";
-  Status[Status["finished"] = 3] = "finished";
-  Status[Status["aborted"] = 4] = "aborted";
-  Status[Status["saved"] = 5] = "saved";
+  Status[(Status["pending"] = 0)] = "pending";
+  Status[(Status["downloading"] = 1)] = "downloading";
+  Status[(Status["failed"] = 2)] = "failed";
+  Status[(Status["finished"] = 3)] = "finished";
+  Status[(Status["aborted"] = 4)] = "aborted";
+  Status[(Status["saved"] = 5)] = "saved";
 })(Status || (Status = {}));
 
 function pathReplace(pathname, replaceValue) {
-  return pathname.replace(/\/[\w\.\-%]+$/, `/${replaceValue}`);
+  return pathname.substring(0, pathname.lastIndexOf("/") + 1) + replaceValue;
 }
 
 async function cleanCache() {
@@ -92,34 +92,33 @@ async function getSibling(chapterNumber, pathname) {
 function getAppendContent(previous, next, pathname) {
   let domText = '<div class="nav">';
   if (previous) {
-    domText = domText +
-      `<a href="${
-        pathReplace(
-          pathname,
-          previous.chapterHtmlFileName,
-        )
-      }" class="left"><img src="/assets/chevron-left.svg" /></a>`;
+    domText =
+      domText +
+      `<a href="${pathReplace(
+        pathname,
+        previous.chapterHtmlFileName
+      )}" class="left"><img src="/assets/chevron-left.svg" /></a>`;
   } else {
-    domText = domText +
+    domText =
+      domText +
       `<a class="disabled left"><img src="/assets/chevron-left.svg" /></a>`;
   }
-  domText = domText +
-    `<a href="${
-      pathReplace(
-        pathname,
-        "",
-      )
-    }" class="up"><img src="/assets/chevron-up.svg"></a>`;
+  domText =
+    domText +
+    `<a href="${pathReplace(
+      pathname,
+      ""
+    )}" class="up"><img src="/assets/chevron-up.svg"></a>`;
   if (next) {
-    domText = domText +
-      `<a href="${
-        pathReplace(
-          pathname,
-          next.chapterHtmlFileName,
-        )
-      }" class="right"><img src="/assets/chevron-right.svg"></a>`;
+    domText =
+      domText +
+      `<a href="${pathReplace(
+        pathname,
+        next.chapterHtmlFileName
+      )}" class="right"><img src="/assets/chevron-right.svg"></a>`;
   } else {
-    domText = domText +
+    domText =
+      domText +
       `<a class="disabled right"><img src="/assets/chevron-right.svg"></a>`;
   }
   domText = domText + `</div>`;
@@ -168,14 +167,14 @@ function getAppendContent(previous, next, pathname) {
   return appendContent;
 }
 async function modify(text, pathname) {
-  const chapterNumber = /\/([a-zA-Z]+)?(\d+)([a-zA-Z\.]+)?$/.exec(
-    pathname,
-  )?.map((m) => parseInt(m, 10)).filter((p) => !isNaN(p))[0];
+  const chapterNumber = /\d+/
+    .exec(pathname.substring(pathname.lastIndexOf("/") + 1))
+    ?.map((n) => parseInt(n))[0];
   if (chapterNumber !== undefined) {
     const { previous, next } = await getSibling(chapterNumber, pathname);
     text = text.replace(
       "</body>",
-      getAppendContent(previous, next, pathname) + "</body>",
+      getAppendContent(previous, next, pathname) + "</body>"
     );
     return text;
   } else {
