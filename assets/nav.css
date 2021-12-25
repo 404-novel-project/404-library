@@ -1,0 +1,12 @@
+.nav {
+  display: grid;
+  grid-template-columns: 33% 33% 33%;
+  margin-top: 1.5em;
+}
+.nav > a {
+  text-align: center;
+}
+.nav > a.disabled {
+  pointer-events: none;
+  cursor: default;
+}

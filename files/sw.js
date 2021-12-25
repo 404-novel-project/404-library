@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 /// <reference lib="webworker.importscripts" />
 
-const version = "v9";
+const version = "v10";
 let Status;
 (function (Status) {
   Status[(Status["pending"] = 0)] = "pending";
@@ -31,7 +31,9 @@ async function initCache() {
     "/assets/chevron-right.svg",
     "/assets/chevron-up.svg",
     "/assets/worker.js",
+    "/assets/nav.css",
     "/favicon.ico",
+    "/404.html",
   ];
   const cache = await caches.open(`main-${version}`);
   cache.addAll(cacheList);
@@ -89,7 +91,7 @@ async function getSibling(chapterNumber, pathname) {
     next: nextList[0] ?? null,
   };
 }
-function getAppendContent(previous, next, pathname) {
+function getChapterJS(previous, next, pathname) {
   let domText = '<div class="nav">';
   if (previous) {
     domText =
@@ -123,65 +125,113 @@ function getAppendContent(previous, next, pathname) {
   }
   domText = domText + `</div>`;
 
-  const appendContent = `
-<script>
-  const main = document.querySelector(".main");
-  main.innerHTML = main.innerHTML + \`${domText}\`;
+  const js = `const main = document.querySelector(".main");
+main.innerHTML = main.innerHTML + \`${domText}\`;
 
-  document.addEventListener("keydown", (e) => {
-    const key = e.keyCode;
-    // enter
-    if (key === 13) {
-        document.querySelector(".nav > a.up")?.click()
-    }
-    // left arrow
-    if (key === 37) {
-        document.querySelector(".nav > a.left")?.click()
-    }
-    // right arrow
-    if (key === 39) {
-        document.querySelector(".nav > a.right")?.click()
-    }
-  });
+document.addEventListener("keydown", (e) => {
+  const key = e.keyCode;
+  // enter
+  if (key === 13) {
+      document.querySelector(".nav > a.up")?.click()
+  }
+  // left arrow
+  if (key === 37) {
+      document.querySelector(".nav > a.left")?.click()
+  }
+  // right arrow
+  if (key === 39) {
+      document.querySelector(".nav > a.right")?.click()
+  }
+});
 
-  // prefetch next page
-  Array.from(
-    document.querySelectorAll(".nav > a.right[href], .nav > a.left[href]")
-  ).forEach((a) => fetch(a.href));  
-</script>
-<style>
-  .nav {
-    display: grid;
-    grid-template-columns: 33% 33% 33%;
-    margin-top: 1.5em;
-  }
-  .nav > a {
-    text-align: center;
-  }
-  .nav > a.disabled {
-    pointer-events: none;
-    cursor: default;
-  }
-</style>
-`;
-  return appendContent;
+// prefetch next page
+Array.from(
+  document.querySelectorAll(".nav > a.right[href], .nav > a.left[href]")
+).forEach((a) => fetch(a.href));`;
+  return js;
 }
-async function modify(text, pathname) {
+async function chapterJS(request) {
+  const cache = await caches.open(`chapters-js-${version}`);
+  const cacheResponse = await cache.match(request);
+  if (cacheResponse) {
+    console.log(`Found cache: ${request.url}`);
+    return cacheResponse;
+  }
+
+  const pathname = new URL(request.url).pathname;
   const chapterNumber = /\d+/
     .exec(pathname.substring(pathname.lastIndexOf("/") + 1))
     ?.map((n) => parseInt(n))[0];
   if (chapterNumber !== undefined) {
     const { previous, next } = await getSibling(chapterNumber, pathname);
+    const js = getChapterJS(previous, next, pathname);
+    const body = new Blob([js], {
+      type: "text/javascript; charset=UTF-8",
+    });
+    const response = new Response(body, {
+      status: 200,
+    });
+    cache.put(request, response.clone());
+    return response;
+  } else {
+    const resp = await fetch("/404.html");
+    return new Response(resp.body, {
+      status: 404,
+      headers: resp.headers,
+    });
+  }
+}
+
+function modifyHTMLText(text, pathname) {
+  const chapterNumber = /\d+/
+    .exec(pathname.substring(pathname.lastIndexOf("/") + 1))
+    ?.map((n) => parseInt(n))[0];
+  if (chapterNumber !== undefined) {
+    text = text.replace(
+      "</head>",
+      '<link href="/assets/nav.css" type="text/css" rel="stylesheet" /></head>'
+    );
     text = text.replace(
       "</body>",
-      getAppendContent(previous, next, pathname) + "</body>"
+      `<script src="Chapter${chapterNumber}.js"></script></body>`
     );
     return text;
   } else {
     return text;
   }
 }
+async function modifyHTMLRequest(req, resp, cache) {
+  const { pathname } = new URL(req.url);
+
+  const _text = await resp.text();
+  const text = modifyHTMLText(_text, pathname);
+  const body = new Blob([text], {
+    type: "text/html; charset=UTF-8",
+  });
+  const response = new Response(body, {
+    headers: resp.headers,
+    status: resp.status,
+    statusText: resp.statusText,
+  });
+  cache.put(req, response.clone());
+  return response;
+}
+
+function cacheRequest(request, response, cache) {
+  if (response.clone().status >= 200 && response.clone().status < 400) {
+    cache.put(request, response.clone());
+  }
+}
 async function handleRequest(event) {
+  const { origin, pathname } = new URL(event.request.url);
+  // JS文件
+  if (
+    origin === self.location.origin &&
+    /^\/books\/[\[\](%5B)(%5D)\-\w]+\/Chapter\d+\.js$/.test(pathname)
+  ) {
+    return chapterJS(event.request);
+  }
+
   const cache = await caches.open(`main-${version}`);
   const cacheResponse = await cache.match(event.request);
   if (cacheResponse) {
@@ -190,35 +240,21 @@ async function handleRequest(event) {
   }
 
   const resp = await fetch(event.request);
-  const pathname = new URL(resp.url).pathname;
+  // 修改HTML文件
   if (
+    origin === self.location.origin &&
     /^\/books\/[\[\](%5B)(%5D)\-\w]+\/(\w+)?(Chapter)([\w\.]+)?$/.test(pathname)
   ) {
     if (resp.ok) {
-      const text = await resp.text();
-      const newText = await modify(text, pathname);
-      const body = new Blob([newText], {
-        type: "text/html; charset=UTF-8",
-      });
-      const response = new Response(body, {
-        headers: resp.headers,
-        status: resp.status,
-        statusText: resp.statusText,
-      });
-      cache.put(event.request, response.clone());
-      return response.clone();
+      return modifyHTMLRequest(event.request, resp, cache);
     } else {
-      if (resp.clone().status >= 200 && resp.clone().status < 400) {
-        cache.put(event.request, resp.clone());
-      }
-      return resp.clone();
+      cacheRequest(event.request, resp, cache);
+      return resp;
     }
-  } else {
-    if (resp.clone().status >= 200 && resp.clone().status < 400) {
-      cache.put(event.request, resp.clone());
-    }
-    return resp.clone();
   }
+
+  cacheRequest(event.request, resp, cache);
+  return resp;
 }
 self.addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event));
