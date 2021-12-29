@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 /// <reference lib="webworker.importscripts" />
 
-const version = "v10";
+const version = "v10-1";
 let Status;
 (function (Status) {
   Status[(Status["pending"] = 0)] = "pending";
