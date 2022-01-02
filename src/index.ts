@@ -24,7 +24,7 @@ function converHref(href: string) {
     .replace(/(\-+)?\[(\-+)?/, "[")
     .replace(/(\-+)?\](\-+)?/, "]")
     .replace(/(\-+)?\/$/, "/")
-    .replace("ü", "v");
+    .replaceAll("ü", "v");
   if (/^[\w\/\.\-\[\]]+$/.test(newHref)) {
     return newHref;
   } else {
